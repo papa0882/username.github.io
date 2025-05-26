@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Oxide Cheap — Real Payment</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
+        button { background: #4CAF50; color: white; border: none; padding: 10px; cursor: pointer; }
+        #payment-form { margin-top: 20px; border: 1px solid #ddd; padding: 15px; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <h1>Oxide Cheap 🛒</h1>
+    
+    <!-- Товары -->
+    <div class="product" data-id="1" data-price="500">
+        <h3>Игровая валюта — 500 руб.</h3>
+        <button class="buy-btn">Купить</button>
+    </div>
+    
+    <!-- Форма оплаты -->
+    <div id="payment-form" class="hidden">
+        <h2>Оплата через <span id="method-name"></span></h2>
+        <div id="card-form">
+            <input type="text" id="card-number" placeholder="Номер карты" maxlength="16">
+            <input type="text" id="card-expiry" placeholder="MM/ГГ" maxlength="5">
+            <input type="text" id="card-cvv" placeholder="CVV" maxlength="3">
+        </div>
+        <button id="pay-button">Оплатить</button>
+        <div id="payment-status"></div>
+    </div>
+
+<script>
+// Конфиг (ЗАМЕНИ НА СВОИ ДАННЫЕ)
+const PAYMENT_API = "https://your-payment-gateway.com/api";
+const API_KEY = "your_api_key_here";
+
+let currentProduct = null;
+
+// Обработчик кнопки "Купить"
+document.querySelector('.buy-btn').addEventListener('click', function() {
+    currentProduct = {
+        id: this.closest('.product').dataset.id,
+        price: parseInt(this.closest('.product').dataset.price)
+    };
+    
+    document.getElementById('payment-form').classList.remove('hidden');
+    document.getElementById('method-name').textContent = "Банковскую карту";
+});
+
+// Отправка платежа
+document.getElementById('pay-button').addEventListener('click', async function() {
+    const statusEl = document.getElementById('payment-status');
+    statusEl.innerHTML = "Обработка платежа...";
+    
+    try {
+        // 1. Создаем платеж на сервере
+        const response = await axios.post(`${PAYMENT_API}/create`, {
+            productId: currentProduct.id,
+            amount: currentProduct.price,
+            card: {
+                number: document.getElementById('card-number').value,
+                expiry: document.getElementById('card-expiry').value,
+                cvv: document.getElementById('card-cvv').value
+            },
+            apiKey: API_KEY
+        });
+        
+        // 2. Обработка ответа
+        if (response.data.success) {
+            statusEl.innerHTML = `
+                <p style="color: green;">✅ Платеж успешен!</p>
+                <p>ID транзакции: ${response.data.paymentId}</p>
+            `;
+        } else {
+            throw new Error(response.data.error || "Ошибка платежа");
+        }
+    } catch (error) {
+        statusEl.innerHTML = `<p style="color: red;">❌ Ошибка: ${error.message}</p>`;
+    }
+});
+</script>
+</body>
+</html>
